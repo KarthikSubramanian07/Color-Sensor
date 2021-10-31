@@ -4,7 +4,10 @@
 
 package frc.robot;
 
+import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
+import com.ctre.phoenix.motorcontrol.can.TalonFX;
+import com.ctre.phoenix.motorcontrol.can.TalonFXConfiguration;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -13,6 +16,7 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
+
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
  * each mode, as described in the TimedRobot documentation. If you change the name of this class or
@@ -20,16 +24,22 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * project.
  */
 public class Robot extends TimedRobot {
+  final int kUnitsPerRevolution = 2048;
+
+  WPI_TalonFX talon = new WPI_TalonFX(10);
+
+  int loops = 0;
+
   private static final String kDefaultAuto = "Default";
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
-  private static final int kJoystickPort = 1;
-  private static final int kMotorPort = 2;
-  private static final int kUltrasonicPort = 3;
+  private static final int kJoystickPort = 0;
+  private static final int kMotorPort = 7;
+  private static final int kUltrasonicPort = 0;
 
-  private final WPI_TalonFX falcon = new WPI_TalonFX(2);
+  private final WPI_TalonFX falcon = new WPI_TalonFX(10);
   private final XboxController joystick = new XboxController(kJoystickPort);
   private final AnalogInput ultrasonic = new AnalogInput(kUltrasonicPort);
 
@@ -39,6 +49,10 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
+    TalonFXConfiguration configs = new TalonFXConfiguration();
+    configs.primaryPID.selectedFeedbackSensor = FeedbackDevice.IntegratedSensor;
+    talon.configAllSettings(configs);
+    
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
@@ -52,7 +66,8 @@ public class Robot extends TimedRobot {
    * SmartDashboard integrated updating.
    */
   @Override
-  public void robotPeriodic() {}
+  public void robotPeriodic() {
+    }
 
   /**
    * This autonomous (along with the chooser code above) shows how to select between different
@@ -92,11 +107,21 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
+    double selSenPos = talon.getSelectedSensorPosition(0); /* position units */
+    double selSenVel = talon.getSelectedSensorVelocity(0); /* position units per 100ms */
+    
+    double pos_Rotations = (double) selSenPos/kUnitsPerRevolution;
+    double vel_RotPerSec = (double) selSenVel/kUnitsPerRevolution * 10;
+      
     falcon.set(TalonFXControlMode.PercentOutput, joystick.getRawAxis(1) * 0.1);
 
     double distance = ultrasonic.getValue();
-
+  
     SmartDashboard.putNumber("Distance", distance);
+    SmartDashboard.putNumber("Pos-units", selSenPos);
+    SmartDashboard.putNumber("Vel-unitsPer100ms", selSenVel);
+    SmartDashboard.putNumber("Pos-Rotations", pos_Rotations);
+    SmartDashboard.putNumber("Vel-RPS", vel_RotPerSec);
   }
 
   /** This function is called once when the robot is disabled. */
