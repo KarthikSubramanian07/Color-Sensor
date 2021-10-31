@@ -38,6 +38,8 @@ public class Robot extends TimedRobot {
   private static final int kJoystickPort = 0;
   private static final int kMotorPort = 7;
   private static final int kUltrasonicPort = 0;
+  
+  private static final int ktarget = 10;
 
   private final WPI_TalonFX falcon = new WPI_TalonFX(10);
   private final XboxController joystick = new XboxController(kJoystickPort);
@@ -56,6 +58,8 @@ public class Robot extends TimedRobot {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
+
+    talon.setSelectedSensorPosition(0);
   }
 
   /**
@@ -112,8 +116,6 @@ public class Robot extends TimedRobot {
     
     double pos_Rotations = (double) selSenPos/kUnitsPerRevolution;
     double vel_RotPerSec = (double) selSenVel/kUnitsPerRevolution * 10;
-      
-    falcon.set(TalonFXControlMode.PercentOutput, joystick.getRawAxis(1) * 0.1);
 
     double distance = ultrasonic.getValue();
   
@@ -122,6 +124,14 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Vel-unitsPer100ms", selSenVel);
     SmartDashboard.putNumber("Pos-Rotations", pos_Rotations);
     SmartDashboard.putNumber("Vel-RPS", vel_RotPerSec);
+
+    double error = ktarget * kUnitsPerRevolution - selSenPos;
+
+    if (error > 0) {
+      falcon.set(TalonFXControlMode.PercentOutput, 0.1);
+    } else {
+      falcon.stopMotor();
+    }
   }
 
   /** This function is called once when the robot is disabled. */
